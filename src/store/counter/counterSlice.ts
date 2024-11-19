@@ -2,10 +2,14 @@ import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 interface CounterState {
   value: number;
+  history: number[];
+  future: number[];
 }
 
 const initialState: CounterState = {
   value: 0,
+  history: [],
+  future: [],
 };
 
 const counterSlice = createSlice({
@@ -13,13 +17,31 @@ const counterSlice = createSlice({
   initialState,
   reducers: {
     increment: (state) => {
-      state.value += 1;
-    },
+        state.history.push(state.value);
+        state.value += 1;
+        state.future = [];
+      },
     decrement: (state) => {
+      state.history.push(state.value);
       state.value -= 1;
+      state.future = [];
     },
     incrementByAmount: (state, action: PayloadAction<number>) => {
+        state.history.push(state.value);
       state.value += action.payload;
+      state.future = [];
+    },
+    undo: (state) => {
+      if (state.history.length > 0) {
+        state.future.push(state.value);
+        state.value = state.history.pop()!;
+      }
+    },
+    redo: (state) => {
+      if (state.future.length > 0) {
+        state.history.push(state.value);
+        state.value = state.future.pop()!;
+      }
     },
   },
   extraReducers: (builder) => {
@@ -44,6 +66,6 @@ export const incrementAsync = createAsyncThunk(
   }
 );
 
-export const { increment, decrement, incrementByAmount } = counterSlice.actions;
+export const { increment, decrement, incrementByAmount, undo, redo } = counterSlice.actions;
 
 export default counterSlice.reducer;
